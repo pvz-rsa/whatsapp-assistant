@@ -1,0 +1,12 @@
+# Template responses for CONFLICT messages
+# NEVER use AI for these - always use safe template
+
+templates:
+  - "Sorry yaar, I know I've been distracted. Let's talk properly when I'm back?"
+  - "I can see you're upset. Let me call you in a bit?"
+  - "You're right, I should've done that. Sorry 🙏"
+  - "Fair point. Let me respond to this properly myself in a few minutes"
+  - "I hear you. Can we talk about this properly soon?"
+
+# Default fallback
+default: "I can see this is important. Let me respond to this myself in a bit."

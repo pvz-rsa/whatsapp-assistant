@@ -1,0 +1,74 @@
+# WhatsApp Assistant Configuration
+# Copy this to config.yaml and customize
+
+# Core Settings
+wife_chat_id: "1234567890@s.whatsapp.net"  # Target WhatsApp JID (get from list_chats)
+anthropic_api_key_env: "ANTHROPIC_API_KEY"
+
+# Feature Flags
+enable_auto_reply: true            # Master kill switch
+busy_mode: false                   # Toggle to enable auto-replies
+dry_run: true                      # Start with dry_run=true for testing
+
+# Operational Constraints
+allowed_hours:
+  start: "08:00"
+  end: "23:00"
+  timezone: "Asia/Kolkata"         # Your timezone
+
+rate_limiting:
+  max_replies_per_hour: 10         # Recommended: keep low
+  max_replies_per_day: 50          # Recommended: keep low
+
+polling_interval_seconds: 30
+message_lookback_minutes: 5
+
+# Proactive Messaging Settings
+proactive_messaging:
+  enabled: false                    # Start disabled, enable after testing
+  silence_threshold_minutes: 60    # Initiate after 60 min silence (don't go below 30)
+  jitter_minutes: 10               # Random delay 0-10 min for natural timing
+
+  allowed_hours:
+    start: "09:00"
+    end: "18:00"
+
+  max_unanswered_proactive: 1      # Stop after 1 unreplied proactive message
+
+  content_types:
+    - check_in
+    - thought_share
+
+  content_weights:
+    check_in: 3
+    thought_share: 1
+
+# Safety Keywords (case-insensitive)
+emergency_keywords:
+  - "URGENT"
+  - "EMERGENCY"
+  - "CALL"
+  - "CALL ME"
+
+# AI Models
+classification:
+  model: "claude-3-5-haiku-20241022"
+  max_tokens: 100
+  temperature: 0.0
+
+reply_generation:
+  model: "claude-sonnet-4-20250514"
+  max_tokens: 200
+  temperature: 0.7
+  context_messages: 10
+
+# WhatsApp MCP Server Configuration
+# Adjust paths to match your whatsapp-mcp installation
+whatsapp_mcp:
+  server_path: "/path/to/whatsapp-mcp/whatsapp-mcp-server"
+  command: "uv"
+  args:
+    - "--directory"
+    - "/path/to/whatsapp-mcp/whatsapp-mcp-server"
+    - "run"
+    - "main.py"

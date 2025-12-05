@@ -1,0 +1,13 @@
+# AI & MCP
+anthropic>=0.40.0
+mcp>=1.1.0
+
+# Configuration
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+pytz>=2024.1
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-mock>=3.14.0

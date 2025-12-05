@@ -1,0 +1,34 @@
+[Unit]
+Description=WhatsApp Auto-Reply Assistant
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Update these to match your setup
+User=YOUR_USERNAME
+Group=YOUR_USERNAME
+WorkingDirectory=/path/to/whatsapp-assistant
+Environment="PATH=/home/YOUR_USERNAME/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/usr/bin/env uv run --with anthropic --with mcp --with pyyaml --with python-dotenv --with pytz python3 /path/to/whatsapp-assistant/src/main.py
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=whatsapp-assistant
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/path/to/whatsapp-assistant/data
+
+[Install]
+WantedBy=multi-user.target

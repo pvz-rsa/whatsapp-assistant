@@ -1,0 +1,49 @@
+# Environment and secrets
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+.eggs/
+*.egg-info/
+*.egg
+
+# Data (contains personal conversations)
+data/state.json
+data/logs/
+data/*.json
+data/*.log
+
+# Keep data directory structure
+!data/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config with personal data (use .example files as templates)
+config/config.yaml
+
+# Prompts with personal style (use .example files as templates)
+config/prompts/reply_system.txt
+config/prompts/proactive_system.txt
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/

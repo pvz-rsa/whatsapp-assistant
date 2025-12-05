@@ -1,0 +1,15 @@
+# Template responses for EMERGENCY keywords
+# Immediate response + notify user
+
+templates:
+  - "Saw your message - is everything okay? Calling you in 2 minutes 📞"
+  - "Just saw this - all okay? I'll call you right away 📞"
+  - "Saw URGENT - is it serious? Calling you now"
+  - "Got your message - what happened? Calling you in a moment"
+
+# Default fallback
+default: "Saw your message - calling you in 2 minutes 📞"
+
+# Notification message to user
+notify_user: true
+notify_message: "🚨 URGENT message from wife: {message_preview}"

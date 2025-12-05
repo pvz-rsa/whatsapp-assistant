@@ -1,0 +1,2 @@
+# This directory stores runtime data (state.json, logs/)
+# These files are gitignored as they contain personal conversation data

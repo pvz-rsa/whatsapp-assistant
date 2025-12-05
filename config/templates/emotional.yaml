@@ -1,0 +1,13 @@
+# Template responses for EMOTIONAL messages
+# Use when AI should NOT generate custom response
+
+templates:
+  - "Sorry yaar, thoda busy ho gaya 🙏"
+  - "Aa raha hoon bas, wait karo"
+  - "I know yaar, bas thoda time aur"
+  - "Miss you too ❤️"
+  - "I'll call you properly in a bit, okay?"
+  - "Thoda busy hoon abhi, but thinking of you"
+
+# Default fallback
+default: "I'll reply properly myself in a bit, okay? 💙"
