@@ -47,3 +47,8 @@ config/prompts/proactive_system.txt
 .pytest_cache/
 .coverage
 htmlcov/
+
+# WhatsApp MCP runtime data
+whatsapp-mcp/whatsapp-bridge/store/
+whatsapp-mcp/whatsapp-mcp-server/.venv/
+whatsapp-mcp/whatsapp-mcp-server/__pycache__/

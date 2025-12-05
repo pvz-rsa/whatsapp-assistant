@@ -1,77 +1,107 @@
 # WhatsApp Auto-Reply Assistant
 
-Personal WhatsApp auto-reply agent that responds in your texting style when you're busy.
+AI-powered WhatsApp auto-reply bot that responds in your texting style when you're busy. Uses Claude for intelligent message classification and response generation.
+
+**All-in-one repo** - includes the WhatsApp bridge, no external dependencies to set up.
 
 ## Features
 
 - **AI-Powered Replies**: Uses Claude (Sonnet/Haiku) for intelligent, contextual responses
-- **Safety First**: Emergency detection, rate limiting, and conflict avoidance
-- **Multilingual Support**: Naturally mixes languages (code-switching)
-- **Smart Routing**: Classifies messages and routes to AI or templates
-- **Time-Aware**: Respects allowed hours
-- **Rate Limited**: Configurable hourly/daily limits
-- **Transparent**: Logs all decisions for review
+- **Message Classification**: Routes messages to AI or safe templates based on type
+- **Safety First**: Emergency detection, rate limiting, conflict avoidance
+- **Multilingual**: Supports code-switching (e.g., Hinglish)
+- **Time-Aware**: Only operates during configured hours
+- **Transparent**: Full logging and conversation export tools
 
 ## Architecture
 
 ```
-WhatsApp App → Go Bridge → MCP Server → Python Orchestrator → Claude API
+WhatsApp App ←→ Go Bridge (localhost:8080) ←→ MCP Server ←→ Assistant ←→ Claude API
+                     ↓
+              Local SQLite DB
 ```
+
+Everything runs locally. Your messages never leave your machine (except to WhatsApp/Claude).
 
 ## Prerequisites
 
-- Python 3.10+
-- [whatsapp-mcp](https://github.com/lharries/whatsapp-mcp) (WhatsApp bridge)
-- [uv](https://github.com/astral-sh/uv) package manager
-- Anthropic API key
+- **Go 1.21+** - for the WhatsApp bridge
+- **Python 3.10+** - for the assistant
+- **uv** - Python package manager ([install](https://github.com/astral-sh/uv))
+- **Anthropic API key** - for Claude
 
 ## Quick Start
 
-### 1. Clone and Setup
+### 1. Clone & Configure
 
 ```bash
-git clone https://github.com/yourusername/whatsapp-assistant.git
+git clone https://github.com/pvz-rsa/whatsapp-assistant.git
 cd whatsapp-assistant
 
 # Copy example configs
 cp .env.example .env
 cp config/config.example.yaml config/config.yaml
-```
+cp config/prompts/reply_system.example.txt config/prompts/reply_system.txt
+cp config/prompts/proactive_system.example.txt config/prompts/proactive_system.txt
 
-### 2. Configure
-
-**Add your API key:**
-```bash
+# Add your API key
 nano .env
 # Set: ANTHROPIC_API_KEY=sk-ant-your-key-here
 ```
 
-**Configure the assistant:**
+### 2. Start the WhatsApp Bridge
+
+```bash
+cd whatsapp-mcp/whatsapp-bridge
+go run main.go
+```
+
+**First time**: A QR code will appear. Scan it with WhatsApp on your phone (Settings → Linked Devices → Link a Device).
+
+Keep this terminal running.
+
+### 3. Find Your Chat ID
+
+Once connected, your chats sync to the local database. Find the target chat JID:
+
+```bash
+# In a new terminal, from project root
+cd whatsapp-mcp/whatsapp-mcp-server
+uv run python -c "
+from whatsapp import list_chats
+for chat in list_chats(limit=10):
+    print(f'{chat.name}: {chat.jid}')
+"
+```
+
+Copy the JID (e.g., `919876543210@s.whatsapp.net`) to your config.
+
+### 4. Configure the Assistant
+
 ```bash
 nano config/config.yaml
-# Set your target chat_id, timezone, etc.
+# Set: wife_chat_id: "919876543210@s.whatsapp.net"
+# Set: timezone: "Your/Timezone"
 ```
 
-**Customize the persona:**
-```bash
-nano config/prompts/reply_system.txt
-# Update to match your texting style
-```
+### 5. Customize Your Persona
 
-### 3. Start WhatsApp Bridge
+Edit `config/prompts/reply_system.txt` with:
+- Your common phrases
+- Language style (formal/casual, code-switching patterns)
+- Emoji preferences
+- Real examples from your chats
 
-The WhatsApp MCP bridge must be running first. Follow the [whatsapp-mcp setup guide](https://github.com/lharries/whatsapp-mcp).
-
-### 4. Test in Dry-Run Mode
+### 6. Test (Dry Run)
 
 ```bash
-# Test with dry-run (no actual messages sent)
+# From project root
 DRY_RUN=true uv run --with anthropic --with mcp --with pyyaml --with python-dotenv --with pytz python3 src/main.py
 ```
 
-### 5. Enable Auto-Reply
+Watch the logs - it will show what it *would* send without actually sending.
 
-When ready to start auto-replying:
+### 7. Go Live
 
 ```bash
 # Edit config
@@ -79,199 +109,141 @@ nano config/config.yaml
 # Set: busy_mode: true
 # Set: dry_run: false
 
-# Or use toggle script
-./scripts/toggle_busy.sh
-```
-
-### 6. Run as Service (Optional)
-
-```bash
-# Edit service file with your paths
-nano whatsapp-assistant.service
-
-# Install service
-sudo cp whatsapp-assistant.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable whatsapp-assistant
-sudo systemctl start whatsapp-assistant
-
-# Check status
-sudo systemctl status whatsapp-assistant
-journalctl -u whatsapp-assistant -f
-```
-
-## Configuration
-
-Edit `config/config.yaml`:
-
-```yaml
-# Core
-wife_chat_id: "1234567890@s.whatsapp.net"  # Target chat JID
-busy_mode: false       # Toggle to enable/disable
-dry_run: true          # Test mode (no actual sends)
-enable_auto_reply: true  # Master kill switch
-
-# Hours
-allowed_hours:
-  start: "08:00"
-  end: "23:00"
-  timezone: "Asia/Kolkata"
-
-# Rate Limits
-rate_limiting:
-  max_replies_per_hour: 10
-  max_replies_per_day: 50
-
-# Emergency Keywords
-emergency_keywords:
-  - "URGENT"
-  - "EMERGENCY"
-  - "CALL ME"
+# Run
+uv run --with anthropic --with mcp --with pyyaml --with python-dotenv --with pytz python3 src/main.py
 ```
 
 ## How It Works
 
 ### Message Classification
 
-1. **LOGISTICAL**: "When are you coming?", "Can you pick up milk?" → AI generates reply
-2. **EMOTIONAL**: "Miss you", "Tired" → Uses safe template
-3. **CONFLICT**: "You never have time" → Uses safe template
+| Type | Example | Action |
+|------|---------|--------|
+| **LOGISTICAL** | "When are you coming?" | AI generates reply |
+| **EMOTIONAL** | "Miss you" | Safe template |
+| **CONFLICT** | "You never have time" | Safe template |
+| **EMERGENCY** | "CALL ME NOW" | Template + flag |
 
-### Decision Priority
+### Decision Flow
 
-1. **Emergency keywords** → Immediate template + flag
-2. **Outside hours** → Skip
-3. **Busy mode OFF** → Log only
-4. **Rate limit exceeded** → Skip
-5. **Classify** → Route to AI or template
-
-### Safety Rules
-
-- ✅ **Auto-reply**: Logistics, schedules, simple requests
-- ⚠️ **Template**: Emotional check-ins, feelings
-- 🚫 **Template**: URGENT, CALL, EMERGENCY keywords
-- 🚫 **Template**: Conflict, complaints
-
-## Personalization
-
-### Update Persona
-
-Edit `config/prompts/reply_system.txt` to match your style:
-
-- Add your common phrases
-- Adjust language mixing ratio
-- Update emoji preferences
-- Add personal examples
-
-### Update Templates
-
-Edit `config/templates/*.yaml` to customize responses:
-
-- `emotional.yaml` - For feelings/connection messages
-- `conflict.yaml` - For disagreements/complaints
-- `emergency.yaml` - For urgent keywords
-- `media.yaml` - For voice notes, images, etc.
+```
+Message → Emergency? → Outside hours? → Busy mode off? → Rate limited? → Classify → Route
+              ↓              ↓                ↓                ↓            ↓
+           Template        Skip             Skip             Skip      AI/Template
+```
 
 ## File Structure
 
 ```
 whatsapp-assistant/
-├── src/
-│   ├── main.py              # Orchestrator
-│   ├── whatsapp_client.py   # MCP wrapper
-│   ├── claude_client.py     # AI client
-│   ├── router.py            # Decision engine
-│   ├── rate_limiter.py      # Rate limiting
-│   ├── state_manager.py     # Persistence
-│   ├── config_loader.py     # Config validation
-│   └── utils.py             # Helpers
+├── src/                       # Assistant code
+│   ├── main.py               # Orchestrator
+│   ├── router.py             # Decision engine
+│   ├── claude_client.py      # AI integration
+│   └── ...
 ├── config/
-│   ├── config.yaml          # Main config (gitignored)
-│   ├── config.example.yaml  # Template config
-│   ├── prompts/             # AI prompts
-│   └── templates/           # Response templates
-├── data/                    # Runtime data (gitignored)
-├── scripts/
-│   ├── toggle_busy.sh       # Toggle busy mode
-│   ├── check_health.sh      # Health check
-│   ├── export_conversation.py  # Export for review
-│   └── reveal_stats.py      # Generate statistics
-└── whatsapp-assistant.service  # Systemd service template
+│   ├── config.yaml           # Your config (gitignored)
+│   ├── prompts/              # AI prompts
+│   └── templates/            # Response templates
+├── whatsapp-mcp/             # Bundled WhatsApp bridge
+│   ├── whatsapp-bridge/      # Go bridge (connects to WhatsApp)
+│   └── whatsapp-mcp-server/  # Python MCP server
+├── data/                     # Runtime data (gitignored)
+└── scripts/                  # Utility scripts
 ```
 
-## Commands Reference
+## Configuration
+
+Key settings in `config/config.yaml`:
+
+```yaml
+wife_chat_id: "919876543210@s.whatsapp.net"  # Target chat
+busy_mode: true              # Enable auto-replies
+dry_run: false               # Actually send messages
+
+allowed_hours:
+  start: "08:00"
+  end: "23:00"
+  timezone: "Asia/Kolkata"
+
+rate_limiting:
+  max_replies_per_hour: 10
+  max_replies_per_day: 50
+```
+
+## Running as a Service
 
 ```bash
-# Manual run
-uv run --with anthropic --with mcp --with pyyaml --with python-dotenv --with pytz python3 src/main.py
+# Edit service file with your paths
+nano whatsapp-assistant.service
 
-# Service management
+# Install
+sudo cp whatsapp-assistant.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable whatsapp-assistant
 sudo systemctl start whatsapp-assistant
-sudo systemctl stop whatsapp-assistant
-sudo systemctl restart whatsapp-assistant
-sudo systemctl status whatsapp-assistant
 
-# Logs
+# Check logs
 journalctl -u whatsapp-assistant -f
+```
+
+## Utility Scripts
+
+```bash
+# Toggle busy mode
+./scripts/toggle_busy.sh
 
 # Health check
 ./scripts/check_health.sh
 
-# Toggle busy mode
-./scripts/toggle_busy.sh
+# Export conversation log
+python3 scripts/export_conversation.py
+
+# View statistics
+python3 scripts/reveal_stats.py
 ```
-
-## Cost Estimate
-
-**Anthropic API** (10 messages/day):
-- Classification (Haiku): ~$0.0005/day
-- Reply generation (Sonnet): ~$0.03/day
-- **Total: ~$1/month**
 
 ## Safety Features
 
-- **Emergency Detection**: Flags URGENT/CALL/EMERGENCY
+- **Emergency Detection**: Flags URGENT/CALL/EMERGENCY keywords
 - **Time Restrictions**: Only operates during allowed hours
 - **Rate Limiting**: Configurable hourly/daily limits
-- **Conflict Avoidance**: Uses safe templates for sensitive topics
-- **Full Logging**: Every decision recorded
-- **Local Storage**: All data stays on your machine
+- **Conflict Avoidance**: Uses safe templates for emotional/conflict messages
+- **Full Logging**: Every decision recorded locally
 
-## Transparency
+## Cost Estimate
 
-This tool is designed to be used **transparently**. Built-in tools help you review and share what was sent:
-
-```bash
-# Generate statistics
-python3 scripts/reveal_stats.py
-
-# Export conversation log
-python3 scripts/export_conversation.py
-```
+~$1/month for typical usage (10-20 messages/day):
+- Classification (Haiku): ~$0.001/message
+- Reply generation (Sonnet): ~$0.003/message
 
 ## Troubleshooting
 
-### Service won't start
-
+### QR code not appearing
 ```bash
-journalctl -u whatsapp-assistant -n 50
-
-# Common issues:
-# 1. API key not set → Check .env file
-# 2. WhatsApp bridge not running → Start the bridge first
-# 3. Config error → Run: python3 src/config_loader.py
+# Delete old session and restart
+rm -rf whatsapp-mcp/whatsapp-bridge/store/
+cd whatsapp-mcp/whatsapp-bridge && go run main.go
 ```
 
-### Not sending replies
+### Bridge not connecting
+- Make sure WhatsApp is open on your phone
+- Check your phone has internet
+- Try unlinking and re-linking the device
 
+### Assistant not sending
 ```bash
 # Check:
-# 1. Busy mode is ON
-# 2. Within allowed hours
-# 3. Rate limit not exceeded
-# 4. Auto-reply enabled
+# 1. Bridge is running (terminal 1)
+# 2. busy_mode: true in config
+# 3. Within allowed_hours
+# 4. dry_run: false
 ./scripts/check_health.sh
 ```
+
+## Credits
+
+WhatsApp bridge based on [whatsapp-mcp](https://github.com/lharries/whatsapp-mcp) by Luke Harries (MIT License).
 
 ## License
 
@@ -279,4 +251,4 @@ MIT License - Use responsibly and transparently.
 
 ---
 
-**Remember**: This is a tool to help when you're genuinely busy, not a replacement for real communication. Use responsibly and with full transparency.
+**Remember**: This is a tool for when you're genuinely busy, not a replacement for real communication. Be transparent with your loved ones.
