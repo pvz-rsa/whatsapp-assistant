@@ -60,11 +60,11 @@ class WhatsAppAssistant:
         self.rate_limiter = RateLimiter(self.state_manager, config)
         logger.info("✓ Rate limiter initialized")
 
-        self.router = Router(config, self.rate_limiter, self.claude_client)
+        self.router = Router(config, self.rate_limiter, self.claude_client, self.state_manager)
         logger.info("✓ Router initialized")
 
         logger.info(f"✅ WhatsApp Assistant ready!")
-        logger.info(f"   Target chat: {config.wife_chat_id}")
+        logger.info(f"   Target chat: {config.target_chat_id}")
         logger.info(f"   Auto-reply enabled: {config.enable_auto_reply}")
         logger.info(f"   Busy mode: {config.busy_mode}")
         logger.info(f"   Dry run: {config.dry_run}")
@@ -77,7 +77,7 @@ class WhatsAppAssistant:
             message: WhatsAppMessage object
         """
         logger.info(f"\n{'='*60}")
-        logger.info(f"New message from wife:")
+        logger.info(f"New message received:")
         logger.info(f"  Text: {message.body}")
         if message.media_type:  # NEW: Log media type
             logger.info(f"  Media: {message.media_type}")
@@ -134,7 +134,7 @@ class WhatsAppAssistant:
                     try:
                         async with self.whatsapp_client.connect():
                             await self.whatsapp_client.send_message(
-                                self.config.wife_chat_id,
+                                self.config.target_chat_id,
                                 reply_text
                             )
                         logger.info(f"✅ Reply sent: \"{reply_text}\"")
@@ -206,7 +206,7 @@ class WhatsAppAssistant:
                 async with self.whatsapp_client.connect():
                     # Fetch recent messages for context
                     messages = await self.whatsapp_client.get_messages(
-                        self.config.wife_chat_id,
+                        self.config.target_chat_id,
                         limit=10
                     )
 
@@ -239,7 +239,7 @@ class WhatsAppAssistant:
             else:
                 async with self.whatsapp_client.connect():
                     await self.whatsapp_client.send_message(
-                        self.config.wife_chat_id,
+                        self.config.target_chat_id,
                         reply_text
                     )
                 logger.info(f"✅ Sent proactive message: \"{reply_text}\"")
@@ -281,7 +281,7 @@ class WhatsAppAssistant:
 
                     # Fetch new messages
                     new_messages = await self.whatsapp_client.get_new_messages(
-                        self.config.wife_chat_id,
+                        self.config.target_chat_id,
                         since_minutes=lookback_minutes
                     )
 

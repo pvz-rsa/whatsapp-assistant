@@ -1,5 +1,5 @@
 # Template responses for media messages
-# Used when she sends voice notes, images, videos, stickers, or documents
+# Used when contact sends voice notes, images, videos, stickers, or documents
 
 audio:
   - "Voice note suna, reply karunga"

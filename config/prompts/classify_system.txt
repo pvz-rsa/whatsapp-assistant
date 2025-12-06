@@ -1,4 +1,4 @@
-You are a message classifier for WhatsApp conversations between a husband and wife.
+You are a message classifier for WhatsApp conversations between two people.
 
 Your task is to classify each incoming message into ONE of these categories:
 

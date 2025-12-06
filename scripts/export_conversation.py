@@ -61,7 +61,7 @@ def export_conversation():
                 if from_me:
                     f.write(f"[{timestamp}] You (Assistant): {text}\n")
                 else:
-                    f.write(f"[{timestamp}] Her: {text}\n")
+                    f.write(f"[{timestamp}] Contact: {text}\n")
                 f.write("\n")
 
         f.write("\n")
@@ -74,7 +74,7 @@ def export_conversation():
     print(f"  Messages processed: {stats.get('total_messages_processed', 0)}")
     print(f"  Replies sent: {stats.get('total_replies_sent', 0)}")
     print(f"  Conversation entries: {len(history)}")
-    print(f"\nUse this export when having the reveal conversation with your wife.")
+    print(f"\nUse this export when reviewing conversation history.")
 
 
 if __name__ == "__main__":

@@ -371,12 +371,12 @@ async def main():
             for chat in chats[:3]:
                 logger.info(f"Chat: {chat.get('name', 'Unknown')} ({chat.get('jid', 'N/A')})")
 
-            # Test 2: Get messages from wife's chat
-            wife_chat_id = config.wife_chat_id
+            # Test 2: Get messages from target chat
+            target_chat_id = config.target_chat_id
             logger.info("\n" + "=" * 60)
-            logger.info(f"TEST 2: Get messages from {wife_chat_id}")
+            logger.info(f"TEST 2: Get messages from {target_chat_id}")
             logger.info("=" * 60)
-            messages = await client.get_messages(wife_chat_id, limit=5)
+            messages = await client.get_messages(target_chat_id, limit=5)
             for msg in messages:
                 direction = "→" if msg.from_me else "←"
                 logger.info(f"{direction} {msg.body[:60]}")
@@ -385,7 +385,7 @@ async def main():
             logger.info("\n" + "=" * 60)
             logger.info(f"TEST 3: Get new messages (last 5 minutes)")
             logger.info("=" * 60)
-            new_messages = await client.get_new_messages(wife_chat_id, since_minutes=60)
+            new_messages = await client.get_new_messages(target_chat_id, since_minutes=60)
             logger.info(f"Found {len(new_messages)} new message(s)")
             for msg in new_messages:
                 logger.info(f"← {msg.body}")

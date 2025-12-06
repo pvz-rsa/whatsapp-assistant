@@ -26,13 +26,13 @@ class Config:
         """Validate configuration structure and values"""
 
         # Required fields
-        required = ["wife_chat_id", "anthropic_api_key_env"]
+        required = ["target_chat_id", "anthropic_api_key_env"]
         for field in required:
             if field not in self.raw:
                 raise ConfigError(f"Missing required field: {field}")
 
         # Validate chat_id format
-        chat_id = self.raw["wife_chat_id"]
+        chat_id = self.raw["target_chat_id"]
         if not chat_id.endswith("@s.whatsapp.net"):
             raise ConfigError(f"Invalid chat_id format: {chat_id}")
 
@@ -66,8 +66,8 @@ class Config:
         return value
 
     @property
-    def wife_chat_id(self) -> str:
-        return self.raw["wife_chat_id"]
+    def target_chat_id(self) -> str:
+        return self.raw["target_chat_id"]
 
     @property
     def enable_auto_reply(self) -> bool:
@@ -157,7 +157,7 @@ def main():
     try:
         config = load_config()
         print("✅ Configuration loaded successfully!")
-        print(f"\nWife's chat ID: {config.wife_chat_id}")
+        print(f"\nTarget chat ID: {config.target_chat_id}")
         print(f"Auto-reply enabled: {config.enable_auto_reply}")
         print(f"Busy mode: {config.busy_mode}")
         print(f"Dry run: {config.dry_run}")

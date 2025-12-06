@@ -35,7 +35,7 @@ def generate_stats():
     reply_rate = (total_replies / total_messages * 100) if total_messages > 0 else 0
 
     # Count message types
-    messages_from_her = sum(1 for msg in history if not msg.get("from_me", False))
+    messages_from_contact = sum(1 for msg in history if not msg.get("from_me", False))
     messages_from_me = sum(1 for msg in history if msg.get("from_me", False))
 
     # Display
@@ -46,7 +46,7 @@ def generate_stats():
 
     print("📊 OVERALL STATISTICS")
     print("-" * 80)
-    print(f"  Total messages from her:     {total_messages}")
+    print(f"  Total messages from contact: {total_messages}")
     print(f"  Total replies sent:          {total_replies}")
     print(f"  Reply rate:                  {reply_rate:.1f}%")
     print()
@@ -61,7 +61,7 @@ def generate_stats():
     print("📈 CONVERSATION BREAKDOWN")
     print("-" * 80)
     print(f"  Messages in history:         {len(history)}")
-    print(f"  - From her:                  {messages_from_her}")
+    print(f"  - From contact:              {messages_from_contact}")
     print(f"  - From assistant:            {messages_from_me}")
     print()
 

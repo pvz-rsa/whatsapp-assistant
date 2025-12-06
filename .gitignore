@@ -52,3 +52,6 @@ htmlcov/
 whatsapp-mcp/whatsapp-bridge/store/
 whatsapp-mcp/whatsapp-mcp-server/.venv/
 whatsapp-mcp/whatsapp-mcp-server/__pycache__/
+
+# Personal migration scripts (contains email/name references)
+migration-scripts/

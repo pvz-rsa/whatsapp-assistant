@@ -80,7 +80,7 @@ Copy the JID (e.g., `919876543210@s.whatsapp.net`) to your config.
 
 ```bash
 nano config/config.yaml
-# Set: wife_chat_id: "919876543210@s.whatsapp.net"
+# Set: target_chat_id: "919876543210@s.whatsapp.net"
 # Set: timezone: "Your/Timezone"
 ```
 
@@ -157,7 +157,7 @@ whatsapp-assistant/
 Key settings in `config/config.yaml`:
 
 ```yaml
-wife_chat_id: "919876543210@s.whatsapp.net"  # Target chat
+target_chat_id: "919876543210@s.whatsapp.net"  # Target chat
 busy_mode: true              # Enable auto-replies
 dry_run: false               # Actually send messages
 

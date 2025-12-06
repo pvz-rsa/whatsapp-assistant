@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Tuple, Optional, TYPE_CHECKING
 from datetime import datetime
 
-from utils import is_within_allowed_hours, contains_emergency_keyword
+from utils import is_within_allowed_hours, contains_emergency_keyword, contains_stop_keyword
 
 if TYPE_CHECKING:
     from whatsapp_client import WhatsAppMessage
@@ -23,9 +23,10 @@ class Decision(Enum):
     TEMPLATE_EMOTIONAL = "template_emotional"  # Use emotional template
     TEMPLATE_CONFLICT = "template_conflict"    # Use conflict template
     TEMPLATE_EMERGENCY = "template_emergency"  # Use emergency template
-    TEMPLATE_MEDIA = "template_media"   # Use media template  # NEW
-    PROACTIVE_MESSAGE = "proactive_message"  # Initiate conversation  # NEW
+    TEMPLATE_MEDIA = "template_media"   # Use media template
+    PROACTIVE_MESSAGE = "proactive_message"  # Initiate conversation
     NO_REPLY_LOG = "no_reply_log"       # Don't reply, just log
+    STOP_DETECTED = "stop_detected"     # User requested bot to stop
 
 
 class Router:
@@ -43,7 +44,7 @@ class Router:
        - CONFLICT → template
     """
 
-    def __init__(self, config, rate_limiter, claude_client):
+    def __init__(self, config, rate_limiter, claude_client, state_manager=None):
         """
         Initialize router
 
@@ -51,10 +52,12 @@ class Router:
             config: Config object
             rate_limiter: RateLimiter instance
             claude_client: ClaudeClient instance
+            state_manager: StateManager instance (for bot disable functionality)
         """
         self.config = config
         self.rate_limiter = rate_limiter
         self.claude_client = claude_client
+        self.state_manager = state_manager
 
     def should_send_proactive_message(
         self,
@@ -66,7 +69,7 @@ class Router:
         Determine if we should send proactive message
 
         Args:
-            last_incoming_time: When we last received message from her
+            last_incoming_time: When we last received message from target contact
             current_time: Current time
             unanswered_count: How many proactive messages we've sent without reply
 
@@ -132,10 +135,24 @@ class Router:
         if current_time is None:
             current_time = datetime.now(self.config.timezone)
 
-        # PRIORITY 0: Check for media-only messages (NEW)
+        # PRIORITY -1: Check if bot is disabled (by previous stop word)
+        if self.state_manager and self.state_manager.is_bot_disabled():
+            reason = self.state_manager.get_disabled_reason() or "Unknown"
+            logger.info(f"🛑 Bot is disabled: {reason}")
+            return Decision.NO_REPLY_LOG, f"Bot disabled: {reason}"
+
+        # PRIORITY 0: Check for media-only messages
         if whatsapp_message and whatsapp_message.is_media_only():
             logger.info(f"📎 Media-only message: {whatsapp_message.media_type}")
             return Decision.TEMPLATE_MEDIA, f"Media-only ({whatsapp_message.media_type})"
+
+        # PRIORITY 0.5: Check for stop keywords (user wants bot to stop)
+        stop_keywords = self.config.get("stop_keywords", [])
+        if stop_keywords and contains_stop_keyword(message, stop_keywords):
+            logger.warning(f"🛑 Stop keyword detected in: {message[:50]}...")
+            if self.state_manager:
+                self.state_manager.disable_bot(f"User said: {message[:100]}")
+            return Decision.STOP_DETECTED, "Stop keyword detected - bot disabled"
 
         # PRIORITY 1: Check for emergency keywords
         if contains_emergency_keyword(message, self.config.emergency_keywords):
@@ -215,7 +232,11 @@ class Router:
             logger.info("Decision: No reply (logging only)")
             return None
 
-        elif decision == Decision.TEMPLATE_MEDIA:  # NEW
+        elif decision == Decision.STOP_DETECTED:
+            logger.warning("Decision: Stop detected - bot disabled, no reply")
+            return None
+
+        elif decision == Decision.TEMPLATE_MEDIA:
             if whatsapp_message and whatsapp_message.media_type:
                 reply = self.claude_client.get_media_template(whatsapp_message.media_type)
                 logger.info(f"Decision: Media template ({whatsapp_message.media_type}) → \"{reply}\"")

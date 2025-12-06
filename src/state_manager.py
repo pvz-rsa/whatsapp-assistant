@@ -83,6 +83,11 @@ class StateManager:
                 "last_incoming_message_time": None,
                 "unanswered_proactive_count": 0,
                 "last_proactive_message_time": None
+            },
+            "bot_control": {  # Bot enable/disable tracking
+                "disabled": False,
+                "disabled_reason": None,
+                "disabled_at": None
             }
         }
 
@@ -248,7 +253,7 @@ class StateManager:
             return self.state.get("statistics", {}).copy()
 
     def get_last_incoming_message_time(self) -> Optional[datetime]:
-        """Get timestamp of last incoming message from wife"""
+        """Get timestamp of last incoming message from target contact"""
         with self.lock:
             proactive = self.state.get("proactive", {})
             timestamp_str = proactive.get("last_incoming_message_time")
@@ -283,12 +288,51 @@ class StateManager:
             self._save()
 
     def reset_unanswered_proactive(self):
-        """Reset unanswered counter when she replies"""
+        """Reset unanswered counter when target contact replies"""
         with self.lock:
             if "proactive" not in self.state:
                 self.state["proactive"] = {}
             self.state["proactive"]["unanswered_proactive_count"] = 0
             self._save()
+
+    def is_bot_disabled(self) -> bool:
+        """Check if bot has been disabled by stop word detection"""
+        with self.lock:
+            bot_control = self.state.get("bot_control", {})
+            return bot_control.get("disabled", False)
+
+    def get_disabled_reason(self) -> Optional[str]:
+        """Get reason why bot was disabled"""
+        with self.lock:
+            bot_control = self.state.get("bot_control", {})
+            return bot_control.get("disabled_reason")
+
+    def disable_bot(self, reason: str):
+        """
+        Disable the bot (triggered by stop word detection)
+
+        Args:
+            reason: Why the bot was disabled (e.g., "User said 'stop'")
+        """
+        with self.lock:
+            if "bot_control" not in self.state:
+                self.state["bot_control"] = {}
+            self.state["bot_control"]["disabled"] = True
+            self.state["bot_control"]["disabled_reason"] = reason
+            self.state["bot_control"]["disabled_at"] = datetime.now().isoformat()
+            self._save()
+            logger.warning(f"🛑 Bot disabled: {reason}")
+
+    def enable_bot(self):
+        """Re-enable the bot (manual action)"""
+        with self.lock:
+            if "bot_control" not in self.state:
+                self.state["bot_control"] = {}
+            self.state["bot_control"]["disabled"] = False
+            self.state["bot_control"]["disabled_reason"] = None
+            self.state["bot_control"]["disabled_at"] = None
+            self._save()
+            logger.info("✅ Bot re-enabled")
 
     def reset(self):
         """Reset state to default (careful!)"""

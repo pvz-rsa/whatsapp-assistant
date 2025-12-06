@@ -126,6 +126,22 @@ def contains_emergency_keyword(text: str, keywords: list[str]) -> bool:
     return any(keyword in text_lower for keyword in keywords)
 
 
+def contains_stop_keyword(text: str, keywords: list[str]) -> bool:
+    """
+    Check if text contains any stop keywords (case-insensitive)
+    These indicate user wants the bot to stop messaging them.
+
+    Args:
+        text: Message text to check
+        keywords: List of stop keywords
+
+    Returns:
+        True if any stop keyword is found
+    """
+    text_lower = text.lower()
+    return any(keyword.lower() in text_lower for keyword in keywords)
+
+
 def format_timestamp(dt: datetime) -> str:
     """
     Format datetime for display

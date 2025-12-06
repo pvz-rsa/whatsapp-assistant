@@ -2,7 +2,7 @@
 # Copy this to config.yaml and customize
 
 # Core Settings
-wife_chat_id: "1234567890@s.whatsapp.net"  # Target WhatsApp JID (get from list_chats)
+target_chat_id: "1234567890@s.whatsapp.net"  # Target WhatsApp JID (get from list_chats)
 anthropic_api_key_env: "ANTHROPIC_API_KEY"
 
 # Feature Flags

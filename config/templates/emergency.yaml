@@ -12,4 +12,4 @@ default: "Saw your message - calling you in 2 minutes 📞"
 
 # Notification message to user
 notify_user: true
-notify_message: "🚨 URGENT message from wife: {message_preview}"
+notify_message: "🚨 URGENT message received: {message_preview}"
